@@ -8,7 +8,9 @@ function init() {
         selector
           .append("option")
           .text(sample)
-          .property("value", sample);
+          .property("value");
+      buildMetadata(sampleNames[0]);
+      buildCharts(sampleNames[0]);
       });
   })}
   
@@ -17,44 +19,43 @@ function init() {
 function buildMetadata(sample) {
     d3.json("samples.json").then((data) => {
       var metadata = data.metadata;
-      var resultArray = metadata.filter(sampleObj => sampleObj.id == sample);
-      var result = resultArray[0];
+      var result = metadata.filter(sampleObj => sampleObj.id.toString() === sample)[0];
       var PANEL = d3.select("#sample-metadata");
   
       PANEL.html("");
-      PANEL.append("h6").text(result.id);
-      PANEL.append("h6").text(result.ethnicity);
-      PANEL.append("h6").text(result.gender);
-      PANEL.append("h6").text(result.age);
-      PANEL.append("h6").text(result.location);
-      PANEL.append("h6").text(result.bbtype);
-      PANEL.append("h6").text(result.wfreq);
+
+      Object.entries(result).forEach((key) => {   
+        PANEL.append("h5").text(key[0].toUpperCase() + ": " + key[1] + "\n"); 
+      });
     });
   }
 
 
 
 
-function buildCharts(sample, otu) {
-    d3.json("samples.json").then((data) => {
+function buildCharts(sample) {
+  
+    d3.json("samples.json").then(data => {
     // Build Bar Graph
     console.log(data.samples[0])
+    var topTen = data.samples[0]['sample_values'].slice(0, 10).reverse()
         var barData = [{
-            x: data.samples[0]['sample_values'].slice(0, 10),
-            y: data.samples[0]['otu_ids'].slice(0, 10),
+            x: topTen,
+            y: data.samples[0]['otu_ids'].slice(0, 10).reverse().map(d => "OTU " + d),
             type: 'bar',
             orientation: 'h'
         }];
+        
         var layout = {
             title: "Top Ten OTUs",
             xaxis: { title: "Sample Values" },
             yaxis: { title: "Bacterial Species"
         }};
-        Plotly.plot('bar', barData, layout);
+        Plotly.newPlot('bar', barData, layout);
 
 });
 
-    d3.json("samples.json").then((data) => {
+    d3.json("samples.json").then(data => {
     // Build Bubble Chart
     var layoutBubble = {
         margin: { t: 0 },
@@ -71,14 +72,15 @@ function buildCharts(sample, otu) {
             colorscale: "Earth"
         }
     }];
-
-    Plotly.plot('bubble', bubble, layoutBubble);
+    Plotly.newPlot('bubble', bubble, layoutBubble);
 });
 }
 
 
 
-function optionChanged(newSample) {
-  buildMetadata(newSample);
-  buildCharts(newSample);
+function optionChanged(sample) {
+  console.log(sample)
+  buildMetadata(sample);
+  buildCharts(sample);
 }
+
